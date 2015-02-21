@@ -106,7 +106,7 @@ The comparison of automatic cars against manual cars showed that manual have 7.2
 #Notes
 
 This file was produced with the knitr in the R studio, the code was omitted in order to reduce the length of the file.  
-The file with Rmd file is available in: https://github.com/fcdidone/reg_project
+The file with Rmd file is available in: https://github.com/fcdidone/reg_project/blob/master/reg2.Rmd
 .  
 .  
 .  
