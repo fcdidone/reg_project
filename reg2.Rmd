@@ -1,0 +1,250 @@
+---
+title: "Miles per gallon and its relationship with car variables: transmission."
+author: "Fábio Corrêa Didoné"
+date: "Thursday, February 19, 2015"
+output:
+  pdf_document:
+    fig_caption: yes
+  word_document: default
+fontsize: 9pt
+---
+
+# Executive Summary
+
+This report will analyse the car variables, focusing in mile per gallon (MPG) and its relationship with others variables like weight, transmission, cylinders and others. The basic objective is to answer if the automatic cars have a higher MPG than manual cars. Linear models and correlation were used to analyse this question. Also, it was fitted a model than can predict the MPG of a car based on its weight, transmission, and second for a quarter mile. It was used  analysis of variance, F-test, confidence intervals, variance inflation, normality test and other diagnostic  to choose the best fitted model. The results show that manual car have a higher MPG than automatic cars. When the manual car was compared to  automatic cars the difference in average was 7.2 increase in MPG for manual cars.  When all variable analysed were fixed the manual cars had an increase in MPG of 2.52. 
+
+```{r,echo=FALSE}
+library(ggplot2); library(plyr); data(mtcars); library(knitr); library(grid)
+
+
+mtcars-> m
+factor(m$vs) -> m$vs
+factor(m$am) -> m$am
+factor(m$cyl) -> m$cyl
+factor(m$carb) -> m$carb
+factor(m$gear) -> m$gear
+revalue(m$am,c("0"="Automatic","1"="Manual")) -> m$am
+revalue(m$vs,c("0"="V","1"="S")) -> m$vs
+
+
+```
+
+
+#Objectives  
+Motor trend is interested in analysing the Miles per gallon relationship with other variables. Hence, we collected data about 32 cars, analysing the variables of design and performance. Special attention is paid to the variable transmissions (automatic or manual). The main objective of this article is to answer these questions:  
+Is an automatic or manual transmission better for MPG?  
+Quantify the MPG difference between automatic and manual transmissions?  
+It also will analysis the relationship of the transmission with another variables regarding the fuel consumption. 
+
+#Exploratory Data analyses
+The variables analysed were: Number of cylinders (cyl), displacement (disp), gross horsepower (hp), rear axle ratio (drat), weight (wt), seconds for one quarter of mile (qsec), v engine or straight engine (vs), transmission (am), forward gears (gear) and carburetors (carb) 
+
+
+The figure 1 shows the shape of the distribution of the MPG. The figure 2 shows the relationship of the MPG with the other variables regarding the transmissions. With these figures it is possible to observe that the mpg has a negative relationship with cylinders, displacement, horsepower, carburetors and weight. The mpg has a positive relationship with: Rear Axle Ratio, v engine or straight engine, seconds for one quarter of mile and it's seems there is no apparent relationship with gear.
+
+The table 1 shows the actual magnitude of the correlation between the MPG and the other variables 
+
+
+#Linear Models
+
+Linear models can be used for a variety of functions.First, it was used to see the difference between the MPG in Automatic cars and Manual cars
+
+
+```{r,echo=FALSE}
+f1 <- lm(mpg~am,data=m);summary(f1)$coef -> L;
+rownames(L) <- c("Automatic","Manual");colnames(L)[c(1,4)] <- c("Estimates","Pvalue")
+
+round(L[2,1] + c(-1, 1) * qt(.975, df = f1$df) * L[2, 2],digits=2) -> LL
+```  
+
+The table 2 shows the difference in MPG between automatic and manual cars is `r round(L[2,1],2)` with t-value of `r round(L[2,3],2)`,with the confidence interval for alpha = 5% between `r round(LL[1],2)` and `r round(LL[2],2)`.TThe figure 3 shows the residuals have a pattern and are not normally distributed.
+
+To know each variable relationship, it was made a linear models with all the variables as the regressors and MPG as the outcome. The table 3 informs the coefficients and the variance inflation for each regressor. 
+
+```{r,echo=FALSE}
+f2 <- lm(mpg~.,data=mtcars); summary(f2)$coef -> ll
+library(car)
+vif <- as.data.frame(c(0,vif(f2)));cbind(ll,vif)->ll
+
+```
+
+The table 3 shows first that when all the other variables are held constant, a manual car has 2.52 higher mpg than an automatic car. Other information that table 3 shows is the p value of the regressor, the variables with the lowest p value are wt, am, qsec. The variables with lowest variance inflation are drat, am and v/s, hence they are not correlated with other variable in the model
+
+In order to do a regression line to explain the MPG variable. It was tested first the variables with the lowest p value as the regressor. After, it is was included the variables with low variation inflation. The regressors tested in the order were : am, wt, qsec, hp,drat,disp and cyl. The table 4 shows the ANOVA for the models tested
+
+
+```{r, echo=FALSE}
+f3 <- lm(mpg~am+wt,data=m)
+f4 <- lm(mpg~am+wt+qsec,data=m)
+f5 <- lm(mpg~am+wt+qsec+hp,data=m)
+f6 <- lm(mpg~am+wt+qsec+hp+drat,data=m)
+f7 <- lm(mpg~am+wt+qsec+hp+drat+disp,data=m)
+f8 <- lm(mpg~am+wt+qsec+hp+drat+disp+cyl,data=m)
+anova(f1,f3,f4,f5,f6,f7,f8) -> j; rownames(j) <- c("am","wt","qsec","hp","drat","disp","cyl")
+summary(f4)$coef -> lll
+round(lll[2,1] + c(-1, 1) * qt(.975, df = f4$df) * lll[2, 2],2) -> u
+```
+
+The model with wt, qsec and wt as regressor was chosen. The table 5 shows the coefficients of the model. All variables have a low p-value and the variance inflated is low. Also,  when the variable weight and qsec are fixed the difference in mpg between a manual car and an automatic car is 2.94 with a confidence interval between  `r u[1]` and `r u[2]`
+
+The table 6 shows some variables that diagnose the model chosen.
+The r² is high and the residuals are normal according the shapiro test. The figure 4 shows other diagnostic variables like the residuals plot against the fitted values and the hat values. 
+
+#Assumptions
+
+In order to realize this analysis some assumptions were made:
+
+The variables are independent and identically distributed .
+The alpha used for all inference in the data was 0.05.
+The ANOVA  assumes normality and constant variance of the variables. 
+
+
+#Conclusions
+The variables selected for the regression were transmission (am), the weight(wt) and second for one quarter of mile(qsec). Probably, because cusec is a performance variable that it is related with other variables like horse power, displacement and carburetors. While, weight is the variable most correlated with MPG. The transmission is a factor that can affect the MPG.  
+The comparison of automatic cars against manual cars showed that manual have 7.2 in average increase in the MPG. When all variables were fixed to account the manual cars had 2.52 increase in mpg. In conclusion, we can affirm that manual cars have higher MPG than automatic cars. 
+
+#Notes
+
+This file was produced with the knitr in the R studio, the code was omitted in order to reduce the length of the file.  
+The file with Rmd file is available in: https://github.com/fcdidone/reg_project
+.  
+.  
+.  
+.  
+
+#Appendix
+###Tables
+
+```{r,echo=FALSE}
+t(cor(mtcars)[,1]) -> kk
+colnames(kk)<- c("MPG","Cylinders","Displacement","hp","Rear Ratio","Weight","Qsec","V/S","Transmission","Gear","Carb")
+kable(kk,digits=2, caption =  "Correlation table")
+```
+
+
+```{r,echo=FALSE}
+f1 <- lm(mpg~am,data=m);summary(f1)$coef -> L;
+rownames(L) <- c("Automatic","Manual");colnames(L)[c(1,4)] <- c("Estimates","Pvalue")
+kable(L,digits=4, caption = "Coefficient of the linear regression")
+round(L[2,1] + c(-1, 1) * qt(.975, df = f1$df) * L[2, 2],digits=2) -> LL
+```  
+
+```{r,echo=FALSE}
+f2 <- lm(mpg~.,data=mtcars); summary(f2)$coef -> ll
+library(car)
+vif <- as.data.frame(c(0,vif(f2)));cbind(ll,vif)->ll; kable(ll,digits=2, caption = "Coefficients of the linear regression and the variance inflation" )
+```
+
+
+
+
+```{r, echo=FALSE}
+f3 <- lm(mpg~am+wt,data=m)
+f4 <- lm(mpg~am+wt+qsec,data=m)
+f5 <- lm(mpg~am+wt+qsec+hp,data=m)
+f6 <- lm(mpg~am+wt+qsec+hp+drat,data=m)
+f7 <- lm(mpg~am+wt+qsec+hp+drat+disp,data=m)
+f8 <- lm(mpg~am+wt+qsec+hp+drat+disp+cyl,data=m)
+anova(f1,f3,f4,f5,f6,f7,f8) -> j; rownames(j) <- c("am","wt","qsec","hp","drat","disp","cyl")
+kable(j,digits=3, caption= "Anova with the model tested. Each row represents the variable included in the mdoel")
+summary(f4)$coef -> lll
+round(lll[2,1] + c(-1, 1) * qt(.975, df = f4$df) * lll[2, 2],2) -> u
+```
+
+```{r,echo=FALSE}
+summary(f4)$coef -> lll
+vif <- as.data.frame(c(0,vif(f4)));cbind(lll,vif)->ll; kable(lll,digits=2, caption = "coefficients and variance inflation for the model chosen")
+
+```
+
+```{r,echo=FALSE}
+summary(f4)-> j
+kable(data.frame(r²=j$r.squared,adj.r²=j$adj.r.squared,shapiro.test=shapiro.test(f4$residuals)$p.value),digits=4, caption = "Diagnostic variables of the model chosen" )
+```
+
+###Figures
+
+```{r,fig.cap= "Density distribution of the MPG. The dotted line represents the mean and the dashed line represents the median ",echo=FALSE,fig.height=3}
+par(mar = c(2,4,1,1))
+plot(density(mtcars$mpg),main="",xlab="MPG", col="lightgreen",lwd=3)
+abline(v= median(mtcars$mpg),lwd=3,lty=2,col="lightblue")
+abline(v = mean(mtcars$mpg),lwd=3,lty=3,col="darkblue")
+legend(33,y=0.07,c("Mean","Median"),lty=c(3,2),col=c("darkblue","lightblue"),lwd=c(3,3))
+```
+
+```{r,echo=FALSE,cache=TRUE,fig.height=8.5, fig.cap="Panel with the relationship of MPG with all other variables. The regression line is plotted for each car transmission"}
+
+
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+        require(grid)
+        
+        plots <- c(list(...), plotlist)
+        
+        numPlots = length(plots)
+        
+       
+        if (is.null(layout)) {
+                
+                layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                                 ncol = cols, nrow = ceiling(numPlots/cols))
+        }
+        
+        if (numPlots==1) {
+                print(plots[[1]])
+                
+        } else {
+                
+                grid.newpage()
+                pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+                
+                
+                for (i in 1:numPlots) {
+                        matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+                        
+                        print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                                        layout.pos.col = matchidx$col))
+                }
+        }
+}
+
+
+
+ggplot(aes(x=cyl,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q1
+ggplot(aes(x=disp,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q2
+ggplot(aes(x=hp,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q3
+ggplot(aes(x=drat,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q4
+ggplot(aes(x=wt,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q5
+ggplot(aes(x=qsec,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q6
+ggplot(aes(x=vs,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q7
+ggplot(aes(x=gear,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q8
+ggplot(aes(x=carb,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group =am, colour=am),method="lm",se=F) -> q9
+ggplot(aes(x=am,y=mpg),data=m) -> q
+q+geom_point(aes(colour=am),size=2)+geom_smooth(aes(group=1),method="lm",se=F) -> q10
+
+multiplot(q1,q2,q3,q4,q5,q6,q7,q8,q9,q10,cols= 2)
+```
+
+
+```{r,fig.cap= "Diagonstic plots for the model",echo=FALSE,fig.height=3}
+par(mfrow=c(1,2))
+plot(f1,which=c(1,2))
+```
+
+
+```{r,fig.height=5, fig.cap= "Diagonstic plots for the model chosen",echo=FALSE}
+par(mfrow=c(2,2))
+plot(f4)
+```
+
+
+
+
